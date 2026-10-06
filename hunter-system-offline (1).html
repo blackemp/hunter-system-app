@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070f">
+<title>Hunter System</title>
+<style>
+:root{--bg:#05070f;--panel:#0a1226;--line:#1f4f8f;--blue:#3ea6ff;--violet:#8a5cff;--gold:#f5c542;--red:#ff5468;--text:#e6f1ff;--dim:#7f95b5;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 60% at 50% -10%,#10234a 0,var(--bg) 60%) fixed var(--bg);color:var(--text);font:600 16px/1.35 Rajdhani,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+main{max-width:520px;margin:0 auto;padding:14px 14px 96px}
+.win{background:linear-gradient(180deg,#0c1731,var(--panel));border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;box-shadow:0 0 18px rgba(62,166,255,.22),inset 0 0 22px rgba(62,166,255,.06)}
+.win h2{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--blue);letter-spacing:.04em}
+.row{display:flex;align-items:center;gap:12px}.sp{justify-content:space-between}
+.dim{color:var(--dim);font-weight:500}.gold{color:var(--gold)}.red{color:var(--red)}
+.rank{font-size:84px;line-height:.9;font-weight:700;color:#fff;text-shadow:0 0 22px var(--blue),0 0 4px var(--blue);min-width:70px;text-align:center}
+.rank.s{text-shadow:0 0 26px var(--violet),0 0 6px var(--gold);color:var(--gold)}
+input{font:inherit;color:var(--text);background:#07101f;border:1px solid var(--line);border-radius:5px;padding:9px 10px;width:100%;min-width:0}
+input:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.name{font-size:24px;font-weight:700;background:none;border:0;border-bottom:1px dashed var(--line);padding:2px 0}
+.bar{height:12px;background:#07101f;border:1px solid var(--line);border-radius:3px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;transition:width .5s;background:linear-gradient(90deg,var(--blue),var(--violet))}
+.bar i.hp{background:linear-gradient(90deg,#b3122a,var(--red))}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.st{border:1px solid var(--line);border-radius:5px;padding:8px 10px;background:#07101f}
+.st b{display:block;font-size:22px}.st span{font-size:13px;color:var(--dim);font-weight:500}
+.q{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:5px;background:#07101f;color:var(--text);font:inherit;font-size:17px;cursor:pointer}
+.q .box{flex:none;width:24px;height:24px;border:2px solid var(--blue);border-radius:4px;display:grid;place-items:center;font-size:16px;color:transparent}
+.q.on{border-color:var(--blue);background:#0b2347;box-shadow:0 0 12px rgba(62,166,255,.35)}
+.q.on .box{background:var(--blue);color:var(--bg)}
+.q.on span.t{color:var(--dim);text-decoration:line-through}
+.btn{font:inherit;font-weight:700;color:#fff;background:linear-gradient(90deg,#1c6fd1,var(--violet));border:0;border-radius:5px;padding:11px 16px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--blue)}
+.pen{border-color:var(--red);box-shadow:0 0 16px rgba(255,84,104,.3);color:var(--red)}
+.h{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #12264a}
+.h button{background:none;border:0;color:var(--red);font:inherit;cursor:pointer}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#060c1c;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;padding:14px 4px;background:none;border:0;color:var(--dim);font:700 16px Rajdhani,system-ui,sans-serif;cursor:pointer}
+nav button.on{color:var(--blue);text-shadow:0 0 10px var(--blue);box-shadow:inset 0 2px 0 var(--blue)}
+#toast{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-140%);transition:transform .35s;z-index:9;width:min(92%,440px);background:#06122b;border:1px solid var(--blue);border-radius:6px;padding:12px 14px;box-shadow:0 0 24px rgba(62,166,255,.6);text-align:center}
+#toast.show{transform:translate(-50%,0)}
+canvas{display:block;margin:0 auto;width:min(100%,260px);border:1px solid var(--line);border-radius:4px;box-shadow:0 0 18px rgba(62,166,255,.3);touch-action:none}.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.pad .btn{padding:16px 0;font-size:20px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="toast" role="status"></div>
+<main id="app"></main>
+<nav><button data-v="status">Status</button><button data-v="quest">Daily quest</button><button data-v="vault">Vault</button><button data-v="arcade">Arcade</button></nav>
+<script>
+const K='hunter-system-v1',pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const addD=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)};
+const diff=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+const fmt=n=>'KES '+Math.round(n).toLocaleString('en-KE');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const def=()=>({name:'Hunter',target:100000,start:'2026-10-06',end:'2026-12-31',habits:['Drink 2L of water','Exercise 30 minutes','Read 20 pages','Sleep before 11pm','Pray or meditate'],ticks:{},saves:{}});
+let S;try{S=Object.assign(def(),JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){S=def()}
+const persist=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const TODAY=()=>ymd(new Date());
+let view='status',cur=TODAY(),edit=false,pend=false,tt;
+if(cur<S.start)cur=S.start;if(cur>S.end)cur=S.end;
+const RANKS=[['E',0],['D',.1],['C',.25],['B',.5],['A',.75],['S',1]];
+const STATN=['VIT','STR','INT','AGI','SENSE'];
+function calc(){
+ const H=S.habits.length;let fd=0,xp=0,per=S.habits.map(()=>0);
+ for(const d in S.ticks){const t=S.ticks[d];xp+=t.length*10;t.forEach(i=>per[i]++);if(t.length>=H){xp+=20;fd++}}
+ let total=0,sd=0,best=0,run=0,prev=null,mrun=0;
+ for(const d of Object.keys(S.saves).sort()){const a=S.saves[d];run=prev&&diff(prev,d)===1?run+1:1;prev=d;mrun=Math.max(mrun,run);total+=a;sd++;best=Math.max(best,a);xp+=25+Math.floor(a/50)+5*Math.min(run,10)}
+ const lvl=Math.floor(Math.sqrt(xp/40))+1;
+ const cs=prev&&diff(prev,TODAY())<=1?run:0;
+ return{xp,per,total,sd,best,lvl,fd,cs,mrun,sh:Math.floor(total/5000)+Math.floor(fd/7),lo:40*(lvl-1)**2,hi:40*lvl**2}
+}
+const full=d=>(S.ticks[d]||[]).length>=S.habits.length;
+function streak(){let d=TODAY(),n=0;if(!full(d))d=addD(d,-1);while(full(d)&&n<400){n++;d=addD(d,-1)}return n}
+function toast(m){const t=document.getElementById('toast');t.innerHTML=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2800)}
+const bar=(p,c='')=>`<div class="bar"><i class="${c}" style="width:${Math.max(0,Math.min(100,p*100))}%"></i></div>`;
+function bossHTML(c){
+ const left=Math.max(0,S.target-c.total);
+ return `<div class="row sp"><span>Gate boss: ${fmt(S.target)}</span><span class="red">${fmt(left)} HP</span></div>${bar(left/S.target,'hp')}`;
+}
+function render(){
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+ const c=calc(),pct=S.target?c.total/S.target:0,rk=RANKS.filter(r=>pct>=r[1]).pop(),nx=RANKS.find(r=>pct<r[1]);
+ let h='';
+ if(view==='status'){
+  const y=addD(TODAY(),-1);
+  if(y>=S.start&&!full(y))h+=`<div class="win pen"><b>[Penalty] Yesterday's quest failed.</b><br><span class="dim">Complete today's daily quest to clear it.</span></div>`;
+  h+=`<div class="win"><h2>[ Status window ]</h2><div class="row"><div class="rank ${rk[0]==='S'?'s':''}">${rk[0]}</div><div style="flex:1;min-width:0"><input class="name" id="nm" value="${esc(S.name)}" maxlength="20" aria-label="Hunter name"><div class="dim">Level ${c.lvl} · ${c.xp} XP · ${streak()}-day streak</div></div></div>${bar((c.xp-c.lo)/(c.hi-c.lo))}<div class="dim">${c.hi-c.xp} XP to level ${c.lvl+1}</div></div>`;
+  h+=`<div class="win"><h2>[ Stats ]</h2><div class="grid">${S.habits.map((n,i)=>`<div class="st"><b>${c.per[i]}</b><span>${STATN[i]||'EXTRA'} · ${esc(n)}</span></div>`).join('')}<div class="st"><b class="gold">${Math.floor(c.total/1000)}</b><span>WEALTH · KES thousands saved</span></div></div></div>`;
+  const GN=['Goblin gate','Orc gate','Ice bear gate','Red knight gate','Ant king gate'];
+  h+=`<div class="win"><h2>[ Gates ]</h2>${bossHTML(c)}${RANKS.slice(1).map((r,i)=>{const ok=pct>=r[1],now=!ok&&pct>=RANKS[i][1];return `<div class="h"><span style="color:${ok?'var(--blue)':now?'var(--text)':'var(--dim)'}">${ok?'✔':now?'▶':'🔒'} Rank ${r[0]} · ${GN[i]}</span><span class="${ok?'':'dim'}">${fmt(S.target*r[1])}</span></div>`}).join('')}</div>`;
+  h+=`<div class="win"><h2>[ Shadow army ]</h2><div style="font-size:18px;letter-spacing:2px;word-break:break-all;color:var(--violet);text-shadow:0 0 8px var(--violet)">${c.sh?'◆'.repeat(Math.min(c.sh,40)):'<span class="dim" style="letter-spacing:0;text-shadow:none">No shadows yet.</span>'}</div><div class="dim">${c.sh} shadows. You extract one for every KES 5,000 saved and every 7 completed quest days.</div></div>`;
+ }
+ if(view==='quest'){
+  const t=S.ticks[cur]||[],n=S.habits.length,isT=cur===TODAY();
+  h+=`<div class="win"><div class="row sp"><button class="btn ghost" onclick="go(-1)" aria-label="Previous day">‹</button><div style="text-align:center"><h2 style="margin:0">[ ${isT?'Daily quest':'Quest log'} ]</h2><div class="dim">${parse(cur).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div></div><button class="btn ghost" onclick="go(1)" aria-label="Next day" ${cur>=TODAY()?'disabled style="opacity:.3"':''}>›</button></div></div>`;
+  h+=`<div class="win">${S.habits.map((x,i)=>edit?`<input data-h="${i}" value="${esc(x)}" maxlength="30" style="margin-bottom:8px" aria-label="Quest ${i+1}">`:`<button class="q ${t.includes(i)?'on':''}" onclick="tick(${i})"><span class="box">✔</span><span class="t">${esc(x)}</span></button>`).join('')}
+  <div class="row sp"><span class="dim">${t.length} of ${n} complete · +10 XP each, +20 XP bonus</span><button class="btn ghost" onclick="toggleEdit()">${edit?'Done':'Edit quests'}</button></div></div>`;
+ }
+ if(view==='vault'){
+  const total=diff(S.start,S.end)+1,t=TODAY();
+  const dl=Math.max(1,Math.min(total,diff(t<S.start?S.start:t,S.end)+1)),left=Math.max(0,S.target-c.total);
+  h+=`<div class="win"><h2>[ Vault ]</h2>${bossHTML(c)}<div class="grid" style="margin-top:8px"><div class="st"><b class="gold">${fmt(c.total)}</b><span>Saved</span></div><div class="st"><b>${c.sd} of ${total}</b><span>Days saved</span></div><div class="st"><b>${fmt(left/dl)}</b><span>Needed per day (${dl} left)</span></div><div class="st"><b>${fmt(c.sd?c.total/c.sd:0)}</b><span>Average · best ${fmt(c.best)}</span></div><div class="st"><b>${c.cs} days</b><span>Savings streak · best ${c.mrun} · +5 XP per day, max 50</span></div><div class="st"><b>${c.fd}</b><span>Quest days completed</span></div></div></div>`;
+  h+=`<div class="win"><h2>[ Log a saving ]</h2><div class="row"><input id="sd" type="date" value="${cur}" min="${S.start}" max="${S.end}" aria-label="Date"><input id="amt" type="number" inputmode="numeric" min="1" placeholder="Amount (KES)" aria-label="Amount in KES"></div><div class="row" style="margin-top:10px"><button class="btn" style="flex:1" onclick="logSave()">Log saving (+25 XP)</button></div><div class="dim" style="margin-top:6px">Logging the same date again replaces that day's amount.</div></div>`;
+  const ds=Object.keys(S.saves).sort().reverse().slice(0,8);
+  h+=`<div class="win"><h2>[ Recent saves ]</h2>${ds.length?ds.map(d=>`<div class="h"><span>${parse(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · <span class="gold">${fmt(S.saves[d])}</span></span><button onclick="del('${d}')">Remove</button></div>`).join(''):'<span class="dim">Nothing logged yet. Save today to deal the first hit to the gate boss.</span>'}</div>`;
+  let wk='';for(let w=0,cw=Math.floor(diff(S.start,t<S.start?S.start:t)/7);w<=cw&&w<Math.ceil(total/7);w++){const f=addD(S.start,w*7);let n=0,sv=0,q=0;for(let k=0;k<7;k++){const d=addD(f,k);if(d>S.end)break;if(S.saves[d]){n++;sv+=S.saves[d]}q+=(S.ticks[d]||[]).length}wk=`<div class="h"><span>Week ${w+1}</span><span class="dim">${n}d saved · <span class="gold">${fmt(sv)}</span> · ${q} ticks</span></div>`+wk}
+  h+=`<div class="win"><h2>[ Weekly report ]</h2>${wk||'<span class="dim">The first week starts on your start date.</span>'}</div>`;
+  h+=`<div class="win"><h2>[ Settings ]</h2><div class="dim">Savings target (KES)</div><input id="tg" type="number" inputmode="numeric" value="${S.target}" style="margin:4px 0 10px"><div class="row"><div style="flex:1"><div class="dim">Start</div><input id="s1" type="date" value="${S.start}"></div><div style="flex:1"><div class="dim">End</div><input id="s2" type="date" value="${S.end}"></div></div><div class="row" style="margin-top:12px"><button class="btn ghost" onclick="saveSet()">Save settings</button><button class="btn ghost" style="color:var(--red);border-color:var(--red)" onclick="reset(this)">Reset all data</button></div></div>`;
+ }
+ if(view==='arcade')h+=`<div class="win"><h2>[ Arcade ]</h2><div id="ti" class="dim" style="text-align:center;margin-bottom:8px"></div><canvas id="cv" width="240" height="480"></canvas><div class="pad"><button class="btn ghost" onclick="tMv(-1)" aria-label="Left">◀</button><button class="btn ghost" onclick="tRt()" aria-label="Rotate">⟳</button><button class="btn ghost" onclick="tMv(1)" aria-label="Right">▶</button><button class="btn ghost" onclick="tDn()" aria-label="Soft drop">▼</button></div><div class="row" style="margin-top:10px"><button class="btn" id="tb" style="flex:1" onclick="tToggle()"></button><button class="btn ghost" onclick="tDp()">Hard drop</button></div><div class="dim" style="margin-top:8px">Keyboard: arrows to move and rotate, space to hard drop. Arcade scores give no XP.</div></div>`;
+ document.getElementById('app').innerHTML=h;
+ if(view==='arcade')tDraw();
+ const nm=document.getElementById('nm');if(nm)nm.onchange=()=>{S.name=nm.value.trim()||'Hunter';persist()};
+ document.querySelectorAll('[data-h]').forEach(i=>i.onchange=()=>{S.habits[i.dataset.h]=i.value.trim()||'Quest';persist()});
+}
+const rkOf=c=>RANKS.filter(r=>(S.target?c.total/S.target:0)>=r[1]).length-1;
+function bump(b,msg){const a=calc(),n=[];if(rkOf(a)>rkOf(b))n.push(`<b>[System] Gate cleared!</b><br>Rank ${RANKS[rkOf(a)][0]} reached.`);if(a.lvl>b.lvl)n.push(`<b>[System] Level up!</b><br>${esc(S.name)} reached level ${a.lvl}.`);if(a.sh>b.sh)n.push(`<b>[System] Arise.</b><br>A new shadow joins your army (${a.sh}).`);const m=n.length?n.join('<hr style="border:0;border-top:1px solid #1f4f8f">'):msg;if(m)toast(m)}
+function tick(i){
+ const b=calc(),t=S.ticks[cur]||[],k=t.indexOf(i);
+ if(k>-1)t.splice(k,1);else t.push(i);
+ S.ticks[cur]=t;persist();
+ bump(b,full(cur)&&k<0?'<b>[System] Daily quest complete.</b><br>+20 XP bonus. Arise.':'');render();
+}
+function go(n){const d=addD(cur,n);if(d<S.start||d>TODAY()||d>S.end)return;cur=d;render()}
+function toggleEdit(){edit=!edit;render()}
+function logSave(){
+ const a=Math.round(+document.getElementById('amt').value),d=document.getElementById('sd').value;
+ if(!(a>0)){toast('<b>[System]</b> Enter an amount above 0.');return}
+ if(!d||d<S.start||d>S.end){toast('<b>[System]</b> Pick a date inside the savings window.');return}
+ const b=calc();S.saves[d]=a;persist();cur=d<=TODAY()?d:cur;
+ bump(b,`<b>[System] ${fmt(a)} saved.</b><br>The gate boss took damage.`);render();
+}
+function del(d){delete S.saves[d];persist();render()}
+function saveSet(){
+ const t=+document.getElementById('tg').value,a=document.getElementById('s1').value,z=document.getElementById('s2').value;
+ if(!(t>0)||!a||!z||z<a){toast('<b>[System]</b> Check the target and dates. End must be after start.');return}
+ S.target=t;S.start=a;S.end=z;persist();toast('<b>[System]</b> Settings saved.');render();
+}
+function reset(b){if(!pend){pend=true;b.textContent='Tap again to confirm';setTimeout(()=>{pend=false;if(b.isConnected)b.textContent='Reset all data'},3000);return}pend=false;S=def();persist();cur=TODAY();toast('<b>[System]</b> Data reset.');render()}
+const PC=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[0,1,1],[1,1,0]],[[1,1,0],[0,1,1]]],COL=['#3ea6ff','#f5c542','#8a5cff','#2b6fe0','#ff9f43','#2ee59d','#ff5468'];
+let T=null,TI=0;
+const tOn=()=>T&&T.run&&!T.over;
+function tNew(){T={b:Array.from({length:20},()=>Array(10).fill(0)),s:0,l:0,over:false,run:false};tSpawn()}
+function tHit(m,x,y){return m.some((r,j)=>r.some((v,i)=>v&&(x+i<0||x+i>9||y+j>19||(y+j>=0&&T.b[y+j][x+i]))))}
+function tSpawn(){const i=Math.random()*7|0;T.p={m:PC[i].map(r=>r.slice()),c:i+1,x:3,y:0};if(tHit(T.p.m,3,0)){T.over=true;T.run=false;S.tb=Math.max(S.tb||0,T.s);persist()}}
+function tRot(){const m=T.p.m,r=m[0].map((_,i)=>m.map(w=>w[i]).reverse());for(const k of[0,-1,1,-2,2])if(!tHit(r,T.p.x+k,T.p.y)){T.p.m=r;T.p.x+=k;break}}
+function tMove(d){if(!tHit(T.p.m,T.p.x+d,T.p.y))T.p.x+=d}
+function tLock(){T.p.m.forEach((r,j)=>r.forEach((v,i)=>{if(v&&T.p.y+j>=0)T.b[T.p.y+j][T.p.x+i]=T.p.c}));let n=0;T.b=T.b.filter(r=>r.some(v=>!v)||(n++,false));while(T.b.length<20)T.b.unshift(Array(10).fill(0));T.l+=n;T.s+=[0,100,300,500,800][n];tSpawn()}
+function tDown(){if(!tHit(T.p.m,T.p.x,T.p.y+1)){T.p.y++;return true}tLock();return false}
+function tDrop(){while(!T.over&&tDown());}
+function tTick(){clearTimeout(TI);if(!tOn())return;tDown();tDraw();TI=setTimeout(tTick,Math.max(90,700-(T.l/10|0)*60))}
+function tToggle(){if(!T||T.over)tNew();T.run=!T.run;if(T.run)tTick();tDraw()}
+function tMv(d){if(tOn()){tMove(d);tDraw()}}function tRt(){if(tOn()){tRot();tDraw()}}function tDn(){if(tOn()){tDown();tDraw()}}function tDp(){if(tOn()){tDrop();tDraw()}}
+function tDraw(){const cv=document.getElementById('cv');if(!cv)return;const x=cv.getContext('2d');x.fillStyle='#07101f';x.fillRect(0,0,240,480);
+ const cell=(i,j,c)=>{x.fillStyle=x.shadowColor=COL[c-1];x.shadowBlur=6;x.fillRect(i*24+1,j*24+1,22,22)};
+ if(T){T.b.forEach((r,j)=>r.forEach((v,i)=>v&&cell(i,j,v)));if(!T.over)T.p.m.forEach((r,j)=>r.forEach((v,i)=>v&&cell(T.p.x+i,T.p.y+j,T.p.c)))}
+ x.shadowBlur=0;const g=!T?'Press start':T.over?'Game over':!T.run?'Paused':'';
+ if(g){x.fillStyle='rgba(5,7,15,.75)';x.fillRect(0,200,240,70);x.fillStyle='#e6f1ff';x.font='700 26px Rajdhani,system-ui,sans-serif';x.textAlign='center';x.fillText(g,120,245)}
+ document.getElementById('ti').textContent=`Score ${T?T.s:0} · Lines ${T?T.l:0} · Best ${S.tb||0}`;
+ document.getElementById('tb').textContent=!T?'Start':T.run?'Pause':T.over?'New game':'Resume'}
+document.addEventListener('keydown',e=>{if(view!=='arcade'||!tOn())return;const k={ArrowLeft:()=>tMv(-1),ArrowRight:()=>tMv(1),ArrowUp:tRt,ArrowDown:tDn,' ':tDp}[e.key];if(k){e.preventDefault();k()}});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{if(T)T.run=false;view=b.dataset.v;edit=false;render();scrollTo(0,0)});
+render();
+</script></body></html>
